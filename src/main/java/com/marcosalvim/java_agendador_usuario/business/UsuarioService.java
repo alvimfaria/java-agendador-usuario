@@ -2,10 +2,17 @@ package com.marcosalvim.java_agendador_usuario.business;
 
 import com.marcosalvim.java_agendador_usuario.business.converter.UsuarioConverter;
 import com.marcosalvim.java_agendador_usuario.business.dto.UsuarioDTO;
+import com.marcosalvim.java_agendador_usuario.business.dto.EnderecoDTO;
+import com.marcosalvim.java_agendador_usuario.business.dto.TelefoneDTO;
+import com.marcosalvim.java_agendador_usuario.infrastructure.entity.Telefone;
+import com.marcosalvim.java_agendador_usuario.infrastructure.entity.Endereco;
 import com.marcosalvim.java_agendador_usuario.infrastructure.entity.Usuario;
 import com.marcosalvim.java_agendador_usuario.infrastructure.exceptions.ConflictException;
 import com.marcosalvim.java_agendador_usuario.infrastructure.exceptions.ResourceNotFoundException;
+import com.marcosalvim.java_agendador_usuario.infrastructure.repository.EnderecoRepository;
+import com.marcosalvim.java_agendador_usuario.infrastructure.repository.TelefoneRepository;
 import com.marcosalvim.java_agendador_usuario.infrastructure.repository.UsuarioRepository;
+import com.marcosalvim.java_agendador_usuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,8 +22,11 @@ import org.springframework.stereotype.Service;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final EnderecoRepository enderecoRepository;
+    private final TelefoneRepository telefoneRepository;
     private final UsuarioConverter usuarioConverter;
     private final PasswordEncoder passwordEncoder;
+    private final JwtUtil jwtUtil;
 
 
     public UsuarioDTO salvaUsuario(UsuarioDTO usuarioDTO){
@@ -62,6 +72,47 @@ public class UsuarioService {
 
         usuarioRepository.deleteByEmail(email);
     }
+
+    public UsuarioDTO atualizaDadosUsuario(String token, UsuarioDTO dto){
+        //Aqui buscamos o email do usuário através do token (tirar a obrigatoriedade do email)
+        String email = jwtUtil.extractUsername(token.substring(7));
+
+        //Criptografia de senha
+        dto.setSenha(dto.getSenha() != null ? passwordEncoder.encode(dto.getSenha()) : null);
+
+        //Busca os dados do usuário no banco de dados
+        Usuario usuarioEntity = usuarioRepository.findByEmail(email).orElseThrow(() ->
+                new ResourceNotFoundException("Email não localizado"));
+
+        //Mesclou os dados que recebemos na requisição DTO com os dados do banco de dados
+        Usuario usuario = usuarioConverter.updateUsuario(dto, usuarioEntity);
+
+        //Salvou os dados do usuário convertido e depois pegou o retorno e converteu para UsuarioDTO
+        return usuarioConverter.paraUsuarioDTO(usuarioRepository.save(usuario));
+    }
+
+    public EnderecoDTO atualizaEndereco(Long idEndereco, EnderecoDTO enderecoDTO){
+
+        Endereco entity = enderecoRepository.findById(idEndereco).orElseThrow(() ->
+                new ResourceNotFoundException("Id não encontrado " + idEndereco));
+
+        Endereco endereco = usuarioConverter.updateEndereco(enderecoDTO,entity);
+
+        return usuarioConverter.paraEnderecoDTO(enderecoRepository.save(endereco));
+
+    }
+
+    public TelefoneDTO atualizaTelefone(Long idTelefone, TelefoneDTO dto){
+
+        Telefone entity = telefoneRepository.findById(idTelefone).orElseThrow(() ->
+                new ResourceNotFoundException("Id não encontrado " + idTelefone));
+
+        Telefone telefone = usuarioConverter.updateTelefone(dto, entity);
+
+        return usuarioConverter.paraTelefoneDTO(telefoneRepository.save(telefone));
+
+    }
+
 
 
 }
