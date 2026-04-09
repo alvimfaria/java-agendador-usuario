@@ -1,6 +1,8 @@
 package com.marcosalvim.java_agendador_usuario.controller;
 
 import com.marcosalvim.java_agendador_usuario.business.UsuarioService;
+import com.marcosalvim.java_agendador_usuario.business.dto.EnderecoDTO;
+import com.marcosalvim.java_agendador_usuario.business.dto.TelefoneDTO;
 import com.marcosalvim.java_agendador_usuario.business.dto.UsuarioDTO;
 import com.marcosalvim.java_agendador_usuario.infrastructure.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -43,5 +45,24 @@ public class UsuarioController {
         usuarioService.deletaUsuarioPorEmail(email);
         return ResponseEntity.ok().build();
     }
+
+    @PutMapping
+    public ResponseEntity<UsuarioDTO> atualizaDadoUsuario(@RequestBody UsuarioDTO dto,
+                                                         @RequestHeader("Authorization") String token) {
+        return ResponseEntity.ok(usuarioService.atualizaDadosUsuario(token, dto));
+    }
+
+    @PutMapping("/endereco")
+    public ResponseEntity<EnderecoDTO> atualizaEndereco(@RequestBody EnderecoDTO dto,
+                                                        @RequestParam("id") Long id){
+        return ResponseEntity.ok(usuarioService.atualizaEndereco(id, dto));
+    }
+
+    @PutMapping("/telefone")
+    public ResponseEntity<TelefoneDTO> atualizaTelefone(@RequestBody TelefoneDTO dto,
+                                                        @RequestParam("id") Long id){
+        return ResponseEntity.ok(usuarioService.atualizaTelefone(id, dto));
+    }
+
 
 }
